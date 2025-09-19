@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>前往 App Store 下载</title>
+
+  <!-- iOS 优化 -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="format-detection" content="telephone=no, email=no, address=no" />
+
+  <!-- Safari Smart App Banner（仅 iOS Safari 生效） -->
+  <meta name="apple-itunes-app" content="app-id=844035425" />
+
+  <style>
+    :root { color-scheme: light dark; }
+    html, body {
+      height: 100%;
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Helvetica Neue", Arial, "Microsoft Yahei", sans-serif;
+      background: #f7f8fa;
+      color: #111;
+    }
+    .wrap {
+      min-height: 100%;
+      display: grid;
+      place-items: center;
+      padding: env(safe-area-inset-top) 16px env(safe-area-inset-bottom);
+      box-sizing: border-box;
+    }
+    .card {
+      width: min(520px, 92vw);
+      background: #fff;
+      border-radius: 16px;
+      padding: 28px 22px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+      text-align: center;
+    }
+    h1 {
+      font-size: 20px;
+      margin: 0 0 12px;
+    }
+    p {
+      margin: 0 0 20px;
+      color: #555;
+      line-height: 1.6;
+    }
+    .btn {
+      display: inline-block;
+      width: 100%;
+      padding: 14px 18px;
+      border-radius: 12px;
+      background: #007aff; /* iOS 蓝 */
+      color: #fff;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 16px;
+      box-shadow: 0 6px 16px rgba(0,122,255,0.3);
+    }
+    .btn:active { transform: translateY(1px); }
+    .tip {
+      margin-top: 12px;
+      font-size: 13px;
+      color: #888;
+    }
+    @media (prefers-color-scheme: dark) {
+      body { background: #0b0c0f; color: #eaeaea; }
+      .card { background: #15171c; box-shadow: 0 8px 24px rgba(0,0,0,0.45); }
+      .tip { color: #aaa; }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="card">
+      <h1>打开 App Store</h1>
+      <p>点击下方按钮将前往 App 的 App Store 页面。</p>
+      <a
+        class="btn"
+        href="https://apps.apple.com/app/id844035425"
+        rel="nofollow noopener"
+      >前往 App Store 下载</a>
+      <div class="tip">如未跳转，请再次点击按钮或在 Safari 中打开本页面。</div>
+    </section>
+  </main>
+</body>
+</html>

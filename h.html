@@ -10,7 +10,7 @@
       --safe-top: env(safe-area-inset-top, 0px);
 
       /* 连续动画：更顺滑，无停顿 */
-      --flow-dur: 1020ms;
+      --flow-dur: 1520ms;
       --ease: cubic-bezier(.25,.8,.25,1);
 
       /* 视觉参数（可调） */
@@ -136,6 +136,7 @@
       :root{ --flow-dur: 0ms; }
       .cta{ transition: none; }
     }
+    .divider { display: none !important; }
   </style>
 </head>
 <body>
@@ -148,7 +149,7 @@
     <!-- 右：png3（初始屏外，纯平移进入） -->
     <section class="card card--store" aria-label="App Store">
       <div class="mask"><div class="bg" aria-hidden="true"></div></div>
-      <button id="back" class="back" type="button">返回</button>
+      <!-- <button id="back" class="back" type="button">返回</button> -->
     </section>
 
     <i class="divider" aria-hidden="true"></i>
@@ -199,4 +200,3 @@
   </script>
 </body>
 </html>
-

@@ -277,37 +277,7 @@
       .divider {
         display: none !important;
       }
-     /* 让 mask 仍在独立图层渲染，防抖动、防圆角毛边 */
-/* 让做圆角的 .mask 在独立 GPU 图层上渲染，避免 iOS 丢失裁切 */
-.card .mask{
-  backface-visibility: hidden;
-  transform: translateZ(0);       /* 提升合成层 */
-  contain: paint;                 /* 限定绘制区域，减少边缘毛边 */
-  will-change: top, bottom, border-radius, box-shadow;
-}
-
-/* 若之前加过 clip-path 的覆盖，这里强制禁用，回到 top/bottom + border-radius 动画 */
-.flow .card .mask { clip-path: none !important; overflow: hidden; }
-
-/* 兜底：对 Safari 打开一个“全通”的 WebKit 遮罩，迫使尊重圆角裁切 */
-@supports (-webkit-mask-image: none) {
-  .card .mask{
-    -webkit-mask-image: -webkit-linear-gradient(#fff, #fff);
-  }
-}
-
-/* 确保关键帧是用 top/bottom 驱动圆角与上下留空（覆盖任何旧的 clip-path 版本） */
-@keyframes homeMaskFlow{
-  0%   { top: 0; bottom: 0; border-radius: 0; box-shadow: none; }
-  15%  { top: var(--inset-y); bottom: var(--inset-y); border-radius: var(--radius); box-shadow: var(--shadow); }
-  100% { top: var(--inset-y); bottom: var(--inset-y); border-radius: var(--radius); box-shadow: var(--shadow); }
-}
-@keyframes storeMaskFlow{
-  0%   { top: 0; bottom: 0; border-radius: 0; box-shadow: none; }
-  15%  { top: var(--inset-y); bottom: var(--inset-y); border-radius: var(--radius); box-shadow: var(--shadow); }
-  70%  { top: var(--inset-y); bottom: var(--inset-y); border-radius: var(--radius); box-shadow: var(--shadow); }
-  100% { top: 0; bottom: 0; border-radius: 0; box-shadow: none; }
-}
+    
     </style>
   </head>
   <body>
@@ -397,5 +367,6 @@
     </script>
   </body>
 </html>
+
 
 

@@ -2,86 +2,166 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>前往 App Store 下载</title>
-
-  <!-- iOS 优化 -->
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="format-detection" content="telephone=no, email=no, address=no" />
-
-  <!-- Safari Smart App Banner（仅 iOS Safari 生效） -->
-  <meta name="apple-itunes-app" content="app-id=844035425" />
-
+  <meta
+    name="viewport"
+    content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"
+  />
+  <title>App Store 跳转模拟</title>
   <style>
-    :root { color-scheme: light dark; }
-    html, body {
-      height: 100%;
-      margin: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Helvetica Neue", Arial, "Microsoft Yahei", sans-serif;
-      background: #f7f8fa;
-      color: #111;
+    :root {
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+      --safe-top: env(safe-area-inset-top, 0px);
     }
-    .wrap {
-      min-height: 100%;
-      display: grid;
-      place-items: center;
-      padding: env(safe-area-inset-top) 16px env(safe-area-inset-bottom);
-      box-sizing: border-box;
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { height: 100%; margin: 0; }
+    body { background: #000; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; }
+
+    /* 通用屏幕容器：全屏，背景图铺满，移动端适配 */
+    .screen {
+      position: fixed;
+      inset: 0;
+      background: #000 center top / cover no-repeat;
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      padding-bottom: calc(var(--safe-bottom) + 8px);
+      transition: opacity .35s ease;
     }
-    .card {
-      width: min(520px, 92vw);
-      background: #fff;
-      border-radius: 16px;
-      padding: 28px 22px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.08);
-      text-align: center;
+    .hidden { opacity: 0; pointer-events: none; }
+
+    /* 首页（png1 作为背景） */
+    #screen-home { background-image: url("./png1.png"); }
+
+    /* App Store 页（png3 作为背景） */
+    #screen-store { background-image: url("./png3.png"); }
+
+    /* 底部 banner（png2 叠加在 png1 的底部 tab 上方） */
+    .cta-wrap {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      /* 放在底部 tab 上面，可根据需要微调这个距离 */
+      bottom: calc(var(--safe-bottom) + 56px);
+      width: min(92vw, 640px);
+      display: flex;
+      justify-content: center;
+      pointer-events: auto;
     }
-    h1 {
-      font-size: 20px;
-      margin: 0 0 12px;
-    }
-    p {
-      margin: 0 0 20px;
-      color: #555;
-      line-height: 1.6;
-    }
-    .btn {
-      display: inline-block;
+    .cta {
       width: 100%;
-      padding: 14px 18px;
-      border-radius: 12px;
-      background: #007aff; /* iOS 蓝 */
+      height: auto;
+      display: block;
+      cursor: pointer;
+      user-select: none;
+      filter: drop-shadow(0 2px 6px rgba(0,0,0,.25));
+      border-radius: 8px;
+    }
+
+    /* “正在打开 App Store …” 的轻提示 */
+    .toast {
+      position: absolute;
+      left: 50%;
+      bottom: calc(var(--safe-bottom) + 120px);
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      background: rgba(0,0,0,.65);
       color: #fff;
-      text-decoration: none;
-      font-weight: 600;
-      font-size: 16px;
-      box-shadow: 0 6px 16px rgba(0,122,255,0.3);
+      border-radius: 12px;
+      font-size: 14px;
+      line-height: 1;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .2s ease;
     }
-    .btn:active { transform: translateY(1px); }
-    .tip {
-      margin-top: 12px;
-      font-size: 13px;
-      color: #888;
+    .toast.show { opacity: 1; }
+
+    .spinner {
+      width: 16px; height: 16px;
+      border: 2px solid rgba(255,255,255,.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
     }
-    @media (prefers-color-scheme: dark) {
-      body { background: #0b0c0f; color: #eaeaea; }
-      .card { background: #15171c; box-shadow: 0 8px 24px rgba(0,0,0,0.45); }
-      .tip { color: #aaa; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* 可选：给 App Store 屏加一个返回按钮，便于调试 */
+    .back {
+      position: absolute;
+      top: calc(var(--safe-top) + 12px);
+      left: 12px;
+      background: rgba(0,0,0,.45);
+      color: #fff;
+      border: 0;
+      border-radius: 16px;
+      padding: 8px 12px;
+      font-size: 14px;
     }
   </style>
 </head>
 <body>
-  <main class="wrap">
-    <section class="card">
-      <h1>打开 App Store</h1>
-      <p>点击下方按钮将前往 App 的 App Store 页面。</p>
-      <a
-        class="btn"
-        href="https://apps.apple.com/app/id844035425"
-        rel="nofollow noopener"
-      >前往 App Store 下载</a>
-      <div class="tip">如未跳转，请再次点击按钮或在 Safari 中打开本页面。</div>
-    </section>
-  </main>
+  <!-- 首页：png1 作为背景 -->
+  <section id="screen-home" class="screen" aria-label="首页">
+    <!-- 将 png2 放在底部 tab 上面 -->
+    <div class="cta-wrap">
+      <img id="cta" class="cta" src="./png2.png" alt="立即前往 App Store" role="button" />
+    </div>
+
+    <!-- 轻提示：模拟 iOS 打开 App Store 的过程 -->
+    <div id="toast" class="toast" aria-live="polite" aria-atomic="true">
+      <div class="spinner" aria-hidden="true"></div>
+      正在打开 App Store…
+    </div>
+  </section>
+
+  <!-- App Store：png3 作为背景 -->
+  <section id="screen-store" class="screen hidden" aria-label="App Store 页面模拟">
+    <button id="back" class="back" type="button">返回</button>
+  </section>
+
+  <script>
+    // 预加载图片，避免切屏时闪烁
+    const preload = src => new Promise(res => {
+      const img = new Image();
+      img.onload = res;
+      img.onerror = res;
+      img.src = src;
+    });
+    Promise.all([preload('./png1.png'), preload('./png2.png'), preload('./png3.png')]);
+
+    const cta = document.getElementById('cta');
+    const toast = document.getElementById('toast');
+    const screenHome = document.getElementById('screen-home');
+    const screenStore = document.getElementById('screen-store');
+    const backBtn = document.getElementById('back');
+
+    // 点击 png2：先显示“正在打开 App Store…”，再切到 png3
+    cta.addEventListener('click', () => {
+      toast.classList.add('show');
+      // 模拟系统拉起动画/延迟
+      setTimeout(() => {
+        toast.classList.remove('show');
+        // 切换到 App Store 屏
+        screenHome.classList.add('hidden');
+        screenStore.classList.remove('hidden');
+      }, 900); // 可按需调整
+    }, { passive: true });
+
+    // 可选：返回首页，便于验收/演示
+    backBtn.addEventListener('click', () => {
+      screenStore.classList.add('hidden');
+      screenHome.classList.remove('hidden');
+    });
+
+    // 防止双击缩放
+    let lastTouchEnd = 0;
+    document.addEventListener('touchend', function (event) {
+      const now = Date.now();
+      if (now - lastTouchEnd <= 350) event.preventDefault();
+      lastTouchEnd = now;
+    }, { passive: false });
+  </script>
 </body>
 </html>

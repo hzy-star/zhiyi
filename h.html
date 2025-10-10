@@ -16,11 +16,14 @@
     html, body { height: 100%; margin: 0; }
     body { background: #000; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; }
 
-    /* 通用屏幕容器：全屏，背景图铺满，移动端适配 */
+    /* 通用屏幕容器：全屏背景“覆盖填充” */
     .screen {
       position: fixed;
       inset: 0;
-      background: #000 center top / cover no-repeat;
+      background-color: #000;
+      background-repeat: no-repeat;
+      background-position: center;         /* 居中 */
+      background-size: cover;              /* 覆盖填充（全屏） */
       display: flex;
       justify-content: center;
       align-items: flex-end;
@@ -29,23 +32,25 @@
     }
     .hidden { opacity: 0; pointer-events: none; }
 
-    /* 首页（png1 作为背景） */
-    #screen-home { background-image: url("./png1.png"); }
+  /* 首页（png1 作为背景） */
+  #screen-home { background-image: url("./png1.png"); }
 
-    /* App Store 页（png3 作为背景） */
-    #screen-store { background-image: url("./png3.png"); }
+  /* App Store 页（png3 作为背景） */
+  #screen-store { background-image: url("./png3.jpg"); }
 
     /* 底部 banner（png2 叠加在 png1 的底部 tab 上方） */
     .cta-wrap {
       position: absolute;
       left: 50%;
       transform: translateX(-50%);
-      /* 放在底部 tab 上面，可根据需要微调这个距离 */
-      bottom: calc(var(--safe-bottom) + 56px);
-      width: min(92vw, 640px);
+      /* 固定距离底部，保证按钮显示在底部区域 */
+      bottom: calc(var(--safe-bottom) + 70px);
+      width: 100vw;                /* 与屏幕同宽，避免被左右裁切 */
+      max-width: 750px;            /* 与 png1 原始宽度对齐，防止超大屏拉伸过头 */
       display: flex;
       justify-content: center;
       pointer-events: auto;
+      padding: 0 0;                /* 如需给两侧留白可改成 padding: 0 4vw; */
     }
     .cta {
       width: 100%;
@@ -61,7 +66,8 @@
     .toast {
       position: absolute;
       left: 50%;
-      bottom: calc(var(--safe-bottom) + 120px);
+      /* 同理用等比高度，避免不同机型位置漂移 */
+      bottom: calc(var(--safe-bottom) + 16vw);
       transform: translateX(-50%);
       display: flex;
       align-items: center;
@@ -106,7 +112,7 @@
   <section id="screen-home" class="screen" aria-label="首页">
     <!-- 将 png2 放在底部 tab 上面 -->
     <div class="cta-wrap">
-      <img id="cta" class="cta" src="./png2.png" alt="立即前往 App Store" role="button" />
+  <img id="cta" class="cta" src="./png2.jpg" alt="立即前往 App Store" role="button" />
     </div>
 
     <!-- 轻提示：模拟 iOS 打开 App Store 的过程 -->
@@ -116,7 +122,7 @@
     </div>
   </section>
 
-  <!-- App Store：png3 作为背景 -->
+  <!-- App Store：png3 作为背景（保持结构以便渐变过渡，可选） -->
   <section id="screen-store" class="screen hidden" aria-label="App Store 页面模拟">
     <button id="back" class="back" type="button">返回</button>
   </section>
@@ -129,27 +135,25 @@
       img.onerror = res;
       img.src = src;
     });
-    Promise.all([preload('./png1.png'), preload('./png2.png'), preload('./png3.png')]);
+  Promise.all([preload('./png1.png'), preload('./png2.jpg'), preload('./png3.jpg')]);
 
     const cta = document.getElementById('cta');
     const toast = document.getElementById('toast');
     const screenHome = document.getElementById('screen-home');
     const screenStore = document.getElementById('screen-store');
-    const backBtn = document.getElementById('back');
+  const backBtn = document.getElementById('back');
 
-    // 点击 png2：先显示“正在打开 App Store…”，再切到 png3
+    // 点击 png2：先显示“正在打开 App Store…”，再切到 png3 背景
     cta.addEventListener('click', () => {
       toast.classList.add('show');
-      // 模拟系统拉起动画/延迟
       setTimeout(() => {
         toast.classList.remove('show');
-        // 切换到 App Store 屏
         screenHome.classList.add('hidden');
         screenStore.classList.remove('hidden');
-      }, 900); // 可按需调整
+      }, 600);
     }, { passive: true });
 
-    // 可选：返回首页，便于验收/演示
+    // 可选：返回首页
     backBtn.addEventListener('click', () => {
       screenStore.classList.add('hidden');
       screenHome.classList.remove('hidden');

@@ -2,170 +2,200 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8" />
-  <meta
-    name="viewport"
-    content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"
-  />
-  <title>App Store 跳转模拟</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"/>
+  <title>App Store 跳转模拟（纯平移·上下留空·连续动画）</title>
   <style>
-    :root {
+    :root{
       --safe-bottom: env(safe-area-inset-bottom, 0px);
       --safe-top: env(safe-area-inset-top, 0px);
-    }
-    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-    html, body { height: 100%; margin: 0; }
-    body { background: #000; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; }
 
-    /* 通用屏幕容器：全屏背景“覆盖填充” */
-    .screen {
-      position: fixed;
-      inset: 0;
-      background-color: #000;
-      background-repeat: no-repeat;
-      background-position: center;         /* 居中 */
-      background-size: cover;              /* 覆盖填充（全屏） */
-      display: flex;
-      justify-content: center;
-      align-items: flex-end;
-      padding-bottom: calc(var(--safe-bottom) + 8px);
-      transition: opacity .35s ease;
-    }
-    .hidden { opacity: 0; pointer-events: none; }
+      /* 连续动画：更顺滑，无停顿 */
+      --flow-dur: 10220ms;
+      --ease: cubic-bezier(.25,.8,.25,1);
 
-  /* 首页（png1 作为背景） */
-  #screen-home { background-image: url("./png1.png"); }
-
-  /* App Store 页（png3 作为背景） */
-  #screen-store { background-image: url("./png3.jpg"); }
-
-    /* 底部 banner（png2 叠加在 png1 的底部 tab 上方） */
-    .cta-wrap {
-      position: absolute;
-      left: 50%;
-      transform: translateX(-50%);
-      /* 固定距离底部，保证按钮显示在底部区域 */
-      bottom: calc(var(--safe-bottom) + 70px);
-      width: 100vw;                /* 与屏幕同宽，避免被左右裁切 */
-      max-width: 750px;            /* 与 png1 原始宽度对齐，防止超大屏拉伸过头 */
-      display: flex;
-      justify-content: center;
-      pointer-events: auto;
-      padding: 0 0;                /* 如需给两侧留白可改成 padding: 0 4vw; */
-    }
-    .cta {
-      width: 100%;
-      height: auto;
-      display: block;
-      cursor: pointer;
-      user-select: none;
-      filter: drop-shadow(0 2px 6px rgba(0,0,0,.25));
-      border-radius: 8px;
+      /* 视觉参数（可调） */
+      --gap: 20px;           /* 中间缝隙，避免交接 */
+      --inset-y: 18px;       /* 分屏阶段上下留空（顶部与底部都留） */
+      --radius: 18px;        /* 分屏阶段圆角 */
+      --shadow: 0 10px 30px rgba(0,0,0,.28), 0 2px 10px rgba(0,0,0,.18);
     }
 
-    /* “正在打开 App Store …” 的轻提示 */
-    .toast {
-      position: absolute;
-      left: 50%;
-      /* 同理用等比高度，避免不同机型位置漂移 */
-      bottom: calc(var(--safe-bottom) + 16vw);
-      transform: translateX(-50%);
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 10px 14px;
-      background: rgba(0,0,0,.65);
-      color: #fff;
-      border-radius: 12px;
-      font-size: 14px;
-      line-height: 1;
-      opacity: 0;
-      pointer-events: none;
+    *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+    html,body{ height:100%; margin:0; }
+    body{
+      background:#000;  /* 黑色舞台 */
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+      overflow:hidden;
+    }
+
+    /* 舞台容器 */
+    .stage{ position:fixed; inset:0; background:#000; overflow:hidden; isolation:isolate; }
+
+    /* 两张“全屏卡片”（只做平移，不缩放） */
+    .card{
+      position:absolute; top:0; left:0; width:100vw; height:100vh;
+      will-change: transform;
+      transform: translateX(0);
+    }
+    .card--store{ left:100vw; } /* 初始在屏外右侧，未进入部分天然不可见 */
+
+    /* 可视窗口：负责上下留空、圆角与阴影；底部与顶部都会留缝 */
+    .mask{
+      position:absolute; left:0; right:0; top:0; bottom:0;
+      overflow:hidden;
+      border-radius:0;
+      box-shadow:none;
+      will-change: top, bottom, border-radius, box-shadow;
+    }
+
+    /* 背景图（填充 mask） */
+    .bg{
+      position:absolute; inset:0;
+      background:#000 center / cover no-repeat;
+    }
+    .card--home .bg{ background-image:url("./png1.png"); }
+    .card--store .bg{ background-image:url("./png3.jpg"); }
+
+    /* 中线阴影（可选） */
+    .divider{
+      position:absolute; top:0; bottom:0; left:50%;
+      width:24px; transform:translateX(-50%);
+      pointer-events:none; opacity:0;
+      background:linear-gradient(90deg, rgba(0,0,0,.35), rgba(0,0,0,0));
+      will-change: opacity;
+      z-index:4;
+    }
+
+    /* 底部 png2（按钮） */
+    .cta-wrap{
+      position:absolute; left:50%; transform:translateX(-50%);
+      bottom:calc(var(--safe-bottom) + 70px);
+      width:100vw; max-width:750px; z-index:5;
       transition: opacity .2s ease;
     }
-    .toast.show { opacity: 1; }
-
-    .spinner {
-      width: 16px; height: 16px;
-      border: 2px solid rgba(255,255,255,.3);
-      border-top-color: #fff;
-      border-radius: 50%;
-      animation: spin .8s linear infinite;
+    .cta{
+      width:100%; height:auto; display:block; user-select:none; cursor:pointer;
+      border-radius:8px; filter:drop-shadow(0 2px 6px rgba(0,0,0,.25));
+      transition: transform .08s ease;
     }
-    @keyframes spin { to { transform: rotate(360deg); } }
+    .cta:active{ transform:scale(.985); }
 
-    /* 可选：给 App Store 屏加一个返回按钮，便于调试 */
-    .back {
-      position: absolute;
-      top: calc(var(--safe-top) + 12px);
-      left: 12px;
-      background: rgba(0,0,0,.45);
-      color: #fff;
-      border: 0;
-      border-radius: 16px;
-      padding: 8px 12px;
-      font-size: 14px;
+    /* ——— 连续时间线：一条动画覆盖整个过程（更流畅） ——— */
+    .flow .divider{ animation: dividerFlow var(--flow-dur) var(--ease) forwards; }
+    .flow .card--home{ animation: homeFlow var(--flow-dur) var(--ease) forwards; }
+    .flow .card--home .mask{ animation: homeMaskFlow var(--flow-dur) var(--ease) forwards; }
+    .flow .card--store{ animation: storeFlow var(--flow-dur) var(--ease) forwards; }
+    .flow .card--store .mask{ animation: storeMaskFlow var(--flow-dur) var(--ease) forwards; }
+    .flow .cta-wrap{ pointer-events:none; opacity:0; }
+
+    /* 左图：0% 全屏 -> 45% 到分屏位置(右半边，留 gap/2) -> 100% 左侧退出（始终平移） */
+    @keyframes homeFlow{
+      0%   { transform: translateX(0); }
+      45%  { transform: translateX(calc(-50vw - var(--gap)/2)); }
+      100% { transform: translateX(calc(-100vw - var(--gap))); }
+    }
+    /* 左图 mask：上下同时留空，出现圆角/阴影，保持到结束 */
+    @keyframes homeMaskFlow{
+      0%   { top: 0; bottom: 0; border-radius: 0; box-shadow: none; }
+      15%  { top: var(--inset-y); bottom: var(--inset-y); border-radius: var(--radius); box-shadow: var(--shadow); }
+      100% { top: var(--inset-y); bottom: var(--inset-y); border-radius: var(--radius); box-shadow: var(--shadow); }
+    }
+
+    /* 右图：起始屏外 -> 45% 到分屏位置(右半边，留 gap/2) -> 100% 平移到全屏 */
+    @keyframes storeFlow{
+      0%   { transform: translateX(0); opacity: .001; } /* 在屏外（left:100vw），opacity>0 防止 Safari 不启动动画 */
+      5%   { opacity: 1; }
+      45%  { transform: translateX(calc(-50vw + var(--gap)/2)); }
+      100% { transform: translateX(-100vw); }
+    }
+    /* 右图 mask：分屏阶段与左侧一致（上下留空+圆角），收尾复原 */
+    @keyframes storeMaskFlow{
+      0%   { top: 0; bottom: 0; border-radius: 0; box-shadow: none; }
+      15%  { top: var(--inset-y); bottom: var(--inset-y); border-radius: var(--radius); box-shadow: var(--shadow); }
+      70%  { top: var(--inset-y); bottom: var(--inset-y); border-radius: var(--radius); box-shadow: var(--shadow); }
+      100% { top: 0; bottom: 0; border-radius: 0; box-shadow: none; }
+    }
+
+    /* 分屏阴影出现-消失（不中断，跟随时间线） */
+    @keyframes dividerFlow{
+      0%   { opacity: 0; }
+      18%  { opacity: 1; }
+      75%  { opacity: 1; }
+      100% { opacity: 0; }
+    }
+
+    /* 返回按钮（可选） */
+    .back{
+      position:absolute; top:calc(var(--safe-top) + 12px); left:12px; z-index:6;
+      background:rgba(0,0,0,.45); color:#fff; border:0; border-radius:16px;
+      padding:8px 12px; font-size:14px;
+    }
+
+    /* 降低动效（系统设置） */
+    @media (prefers-reduced-motion: reduce){
+      :root{ --flow-dur: 0ms; }
+      .cta{ transition: none; }
     }
   </style>
 </head>
 <body>
-  <!-- 首页：png1 作为背景 -->
-  <section id="screen-home" class="screen" aria-label="首页">
-    <!-- 将 png2 放在底部 tab 上面 -->
+  <main id="stage" class="stage">
+    <!-- 左：png1 -->
+    <section class="card card--home" aria-label="首页">
+      <div class="mask"><div class="bg" aria-hidden="true"></div></div>
+    </section>
+
+    <!-- 右：png3（初始屏外，纯平移进入） -->
+    <section class="card card--store" aria-label="App Store">
+      <div class="mask"><div class="bg" aria-hidden="true"></div></div>
+      <button id="back" class="back" type="button">返回</button>
+    </section>
+
+    <i class="divider" aria-hidden="true"></i>
+
+    <!-- 底部 png2 按钮 -->
     <div class="cta-wrap">
-  <img id="cta" class="cta" src="./png2.jpg" alt="立即前往 App Store" role="button" />
+      <img id="cta" class="cta" src="./png2.jpg" alt="立即前往 App Store" role="button" />
     </div>
-
-    <!-- 轻提示：模拟 iOS 打开 App Store 的过程 -->
-    <div id="toast" class="toast" aria-live="polite" aria-atomic="true">
-      <div class="spinner" aria-hidden="true"></div>
-      正在打开 App Store…
-    </div>
-  </section>
-
-  <!-- App Store：png3 作为背景（保持结构以便渐变过渡，可选） -->
-  <section id="screen-store" class="screen hidden" aria-label="App Store 页面模拟">
-    <button id="back" class="back" type="button">返回</button>
-  </section>
+  </main>
 
   <script>
-    // 预加载图片，避免切屏时闪烁
-    const preload = src => new Promise(res => {
-      const img = new Image();
-      img.onload = res;
-      img.onerror = res;
-      img.src = src;
-    });
-  Promise.all([preload('./png1.png'), preload('./png2.jpg'), preload('./png3.jpg')]);
+    // 预加载避免闪烁
+    ['png1.png','png2.jpg','png3.jpg'].forEach(src => { const i=new Image(); i.src=src; });
 
+    const stage = document.getElementById('stage');
     const cta = document.getElementById('cta');
-    const toast = document.getElementById('toast');
-    const screenHome = document.getElementById('screen-home');
-    const screenStore = document.getElementById('screen-store');
-  const backBtn = document.getElementById('back');
+    const backBtn = document.getElementById('back');
+    let playing = false;
 
-    // 点击 png2：先显示“正在打开 App Store…”，再切到 png3 背景
+    function ms(varName){
+      return +getComputedStyle(document.documentElement).getPropertyValue(varName).trim().replace('ms','');
+    }
+
     cta.addEventListener('click', () => {
-      toast.classList.add('show');
-      setTimeout(() => {
-        toast.classList.remove('show');
-        screenHome.classList.add('hidden');
-        screenStore.classList.remove('hidden');
-      }, 600);
-    }, { passive: true });
+      if (playing) return;
+      playing = true;
+      stage.classList.remove('flow'); // 重置一次，保证重复点击也能重新播放
+      // 强制回流后再加 class，确保动画从头开始
+      void stage.offsetWidth;
+      stage.classList.add('flow');
 
-    // 可选：返回首页
+      setTimeout(() => { playing = false; }, ms('--flow-dur') + 30);
+    }, { passive:true });
+
+    // 返回初始（演示/调试）
     backBtn.addEventListener('click', () => {
-      screenStore.classList.add('hidden');
-      screenHome.classList.remove('hidden');
-    });
+      if (playing) return;
+      stage.classList.remove('flow');
+    }, { passive:true });
 
-    // 防止双击缩放
-    let lastTouchEnd = 0;
-    document.addEventListener('touchend', function (event) {
+    // 防 iOS 双击缩放
+    let last = 0;
+    document.addEventListener('touchend', e => {
       const now = Date.now();
-      if (now - lastTouchEnd <= 350) event.preventDefault();
-      lastTouchEnd = now;
-    }, { passive: false });
+      if (now - last <= 350) e.preventDefault();
+      last = now;
+    }, { passive:false });
   </script>
 </body>
 </html>

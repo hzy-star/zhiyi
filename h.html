@@ -277,56 +277,30 @@
       .divider {
         display: none !important;
       }
-      /* 1) 让 mask 在 GPU 图层上渲染，修复 iOS 圆角裁切失效 */
-      .card .mask {
-        backface-visibility: hidden;
-        transform: translateZ(0);
-        contain: paint; /* 限制绘制区域，减少边缘问题 */
-      }
+     /* 让 mask 仍在独立图层渲染，防抖动、防圆角毛边 */
+.card .mask{
+  backface-visibility: hidden;
+  transform: translateZ(0);
+  contain: paint;
+}
 
-      /* 2) 支持的话用 clip-path 做圆角+上下内缩，最可靠。
-   复用你原来的关键帧名，自动覆盖之前的 top/bottom 动画。 */
-      @supports (clip-path: inset(1px round 1px)) {
-        /* clip-path 自带裁切，不需要 overflow:hidden 压边 */
-        .flow .card--home .mask,
-        .flow .card--store .mask {
-          overflow: visible;
-        }
+/* 禁用 clip-path 方案，改回通过 top/bottom 改“可视框高度”的动画 */
+@supports (clip-path: inset(1px round 1px)) {
+  .flow .card .mask { clip-path: none !important; overflow: hidden; }
 
-        @keyframes homeMaskFlow {
-          0% {
-            clip-path: inset(0 0 0 0 round 0);
-          }
-          15% {
-            clip-path: inset(
-              var(--inset-y) 0 var(--inset-y) 0 round var(--radius)
-            );
-          }
-          100% {
-            clip-path: inset(
-              var(--inset-y) 0 var(--inset-y) 0 round var(--radius)
-            );
-          }
-        }
-        @keyframes storeMaskFlow {
-          0% {
-            clip-path: inset(0 0 0 0 round 0);
-          }
-          15% {
-            clip-path: inset(
-              var(--inset-y) 0 var(--inset-y) 0 round var(--radius)
-            );
-          }
-          70% {
-            clip-path: inset(
-              var(--inset-y) 0 var(--inset-y) 0 round var(--radius)
-            );
-          }
-          100% {
-            clip-path: inset(0 0 0 0 round 0);
-          }
-        }
-      }
+  /* 用 top/bottom 做高度变化与圆角（与现有逻辑一致） */
+  @keyframes homeMaskFlow{
+    0%   { top: 0; bottom: 0; border-radius: 0; box-shadow: none; }
+    15%  { top: var(--inset-y); bottom: var(--inset-y); border-radius: var(--radius); box-shadow: var(--shadow); }
+    100% { top: var(--inset-y); bottom: var(--inset-y); border-radius: var(--radius); box-shadow: var(--shadow); }
+  }
+  @keyframes storeMaskFlow{
+    0%   { top: 0; bottom: 0; border-radius: 0; box-shadow: none; }
+    15%  { top: var(--inset-y); bottom: var(--inset-y); border-radius: var(--radius); box-shadow: var(--shadow); }
+    70%  { top: var(--inset-y); bottom: var(--inset-y); border-radius: var(--radius); box-shadow: var(--shadow); }
+    100% { top: 0; bottom: 0; border-radius: 0; box-shadow: none; }
+  }
+}
     </style>
   </head>
   <body>
@@ -416,3 +390,4 @@
     </script>
   </body>
 </html>
+

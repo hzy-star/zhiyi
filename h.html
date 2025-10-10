@@ -14,8 +14,8 @@
       --ease: cubic-bezier(.25,.8,.25,1);
 
       /* 视觉参数（可调） */
-      --gap: 20px;           /* 中间缝隙，避免交接 */
-      --inset-y: 18px;       /* 分屏阶段上下留空（顶部与底部都留） */
+      --gap: 10px;           /* 中间缝隙，避免交接 */
+      --inset-y: 120px;       /* 分屏阶段上下留空（调大以便明显看到上下缩小） */
       --radius: 18px;        /* 分屏阶段圆角 */
       --shadow: 0 10px 30px rgba(0,0,0,.28), 0 2px 10px rgba(0,0,0,.18);
     }
@@ -33,7 +33,10 @@
 
     /* 两张“全屏卡片”（只做平移，不缩放） */
     .card{
-      position:absolute; top:0; left:0; width:100vw; height:100vh;
+      position:absolute; top:0; left:0; width:100vw;
+      height:100vh;   /* 回退 */
+      height:100svh;  /* 小视口：可视高度（iOS 地址栏下滑时也正确） */
+      height:100dvh;  /* 动态视口：现代浏览器 */
       will-change: transform;
       transform: translateX(0);
     }
@@ -51,7 +54,7 @@
     /* 背景图（填充 mask） */
     .bg{
       position:absolute; inset:0;
-      background:#000 center / contain no-repeat;
+      background:#000 center / contain no-repeat;  /* 保证完整显示 */
     }
     .card--home .bg{ background-image:url("./png1.png"); }
     .card--store .bg{ background-image:url("./png3.jpg"); }
@@ -64,6 +67,7 @@
       background:linear-gradient(90deg, rgba(0,0,0,.35), rgba(0,0,0,0));
       will-change: opacity;
       z-index:4;
+      display:none !important; /* 仍然去除发丝线 */
     }
 
     /* 底部 png2（按钮） */
@@ -103,7 +107,7 @@
 
     /* 右图：起始屏外 -> 45% 到分屏位置(右半边，留 gap/2) -> 100% 平移到全屏 */
     @keyframes storeFlow{
-      0%   { transform: translateX(0); opacity: .001; } /* 在屏外（left:100vw），opacity>0 防止 Safari 不启动动画 */
+      0%   { transform: translateX(0); opacity: .001; }
       5%   { opacity: 1; }
       45%  { transform: translateX(calc(-50vw + var(--gap)/2)); }
       100% { transform: translateX(-100vw); }
@@ -116,7 +120,7 @@
       100% { top: 0; bottom: 0; border-radius: 0; box-shadow: none; }
     }
 
-    /* 分屏阴影出现-消失（不中断，跟随时间线） */
+    /* 分隔条（已隐藏，不影响） */
     @keyframes dividerFlow{
       0%   { opacity: 0; }
       18%  { opacity: 1; }
@@ -131,7 +135,6 @@
       padding:8px 12px; font-size:14px;
     }
 
-    /* 降低动效（系统设置） */
     @media (prefers-reduced-motion: reduce){
       :root{ --flow-dur: 0ms; }
       .cta{ transition: none; }
@@ -177,15 +180,14 @@
       if (playing) return;
       playing = true;
       stage.classList.remove('flow'); // 重置一次，保证重复点击也能重新播放
-      // 强制回流后再加 class，确保动画从头开始
-      void stage.offsetWidth;
+      void stage.offsetWidth;         // 强制回流
       stage.classList.add('flow');
 
       setTimeout(() => { playing = false; }, ms('--flow-dur') + 30);
     }, { passive:true });
 
     // 返回初始（演示/调试）
-    backBtn.addEventListener('click', () => {
+    if (backBtn) backBtn.addEventListener('click', () => {
       if (playing) return;
       stage.classList.remove('flow');
     }, { passive:true });
@@ -200,6 +202,3 @@
   </script>
 </body>
 </html>
-
-
-
